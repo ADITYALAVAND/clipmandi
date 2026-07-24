@@ -2,22 +2,21 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
 import { getCurrentUser } from "@/lib/auth";
+import { getCampaigns, getClips } from "@/lib/api";
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import KpiCard from "@/components/dashboard/KpiCard";
 import CampaignsTable from "@/components/dashboard/CampaignsTable";
 import ClipInboxTable from "@/components/dashboard/ClipInboxTable";
 
-import { getCampaigns, getClips } from "@/lib/api";
-import { mockCampaigns, mockClips } from "@/lib/mockData";
-import Link from "next/link";
-
 export default function BrandDashboard() {
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState(mockCampaigns);
-  const [clips, setClips] = useState(mockClips);
+  const [campaigns, setCampaigns] = useState([]);
+  const [clips, setClips] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
@@ -27,17 +26,18 @@ export default function BrandDashboard() {
     role: ""
   });
 
-  // Check authentication first
+  // ======================================================
+  // AUTHENTICATION
+  // ======================================================
+
   useEffect(() => {
     const currentUser = getCurrentUser();
 
-    // No logged-in user
     if (!currentUser) {
       router.replace("/login");
       return;
     }
 
-    // User exists but isn't a creator
     if (currentUser.role !== "CREATOR") {
       router.replace("/clipper");
       return;
@@ -51,7 +51,10 @@ export default function BrandDashboard() {
     setAuthChecked(true);
   }, [router]);
 
-  // Load campaigns + clips
+  // ======================================================
+  // LOAD REAL DASHBOARD DATA
+  // ======================================================
+
   const loadData = useCallback(async () => {
     setLoading(true);
 
@@ -60,20 +63,22 @@ export default function BrandDashboard() {
       getClips()
     ]);
 
-    setCampaigns(campaignData || mockCampaigns);
-    setClips(clipData || mockClips);
+    setCampaigns(campaignData || []);
+    setClips(clipData || []);
 
     setLoading(false);
   }, []);
 
-  // Only load dashboard data after authentication succeeds
   useEffect(() => {
     if (authChecked) {
       loadData();
     }
   }, [authChecked, loadData]);
 
-  // Don't show dashboard before authentication check finishes
+  // ======================================================
+  // AUTH LOADING
+  // ======================================================
+
   if (!authChecked) {
     return (
       <main
@@ -91,23 +96,60 @@ export default function BrandDashboard() {
     );
   }
 
+  // ======================================================
+  // REAL CREATOR STATISTICS
+  // ======================================================
+
   const totalSpent = campaigns.reduce(
-    (sum, c) => sum + c.budgetSpent,
+    (sum, campaign) =>
+      sum + Number(campaign.budgetSpent || 0),
     0
   );
 
-  const totalViews = campaigns.reduce(
-    (sum, c) => sum + c.views,
+  const totalViews = clips.reduce(
+    (sum, clip) =>
+      sum + Number(clip.views || 0),
     0
   );
 
-  const totalClips = campaigns.reduce(
-    (sum, c) => sum + c.clipsCount,
-    0
-  );
+  const totalClips = clips.length;
+
+  const pendingClips = clips.filter(
+    (clip) =>
+      clip.status?.toUpperCase() === "PENDING"
+  ).length;
+
+  // ======================================================
+  // ADD REAL CLIP STATS TO EACH CAMPAIGN
+  // ======================================================
+
+  const campaignsWithStats = campaigns.map((campaign) => {
+    const campaignClips = clips.filter(
+      (clip) => clip.campaignId === campaign.id
+    );
+
+    const campaignViews = campaignClips.reduce(
+      (sum, clip) =>
+        sum + Number(clip.views || 0),
+      0
+    );
+
+    return {
+      ...campaign,
+
+      views: campaignViews,
+
+      clipsCount: campaignClips.length
+    };
+  });
+
+  // ======================================================
+  // DASHBOARD
+  // ======================================================
 
   return (
     <div className="dash">
+
       <Sidebar
         role="brand"
         userName={user.displayName}
@@ -115,38 +157,46 @@ export default function BrandDashboard() {
       />
 
       <main className="main">
+
+        {/* HEADER */}
+
         <div className="dash-header">
+
           <div>
             <h1>Overview</h1>
 
             <div className="greet">
               {loading
                 ? "Loading campaigns…"
-                : `Welcome back, ${user.displayName} — here's how your campaigns are trading today.`}
+                : `Welcome back, ${user.displayName} — here's how your campaigns are performing.`}
             </div>
           </div>
 
           <Link
             href="/brand/campaigns/new"
             className="btn btn-primary"
->
+          >
             + New campaign
           </Link>
+
         </div>
 
+        {/* KPI CARDS */}
+
         <div className="cards-row">
+
           <KpiCard
             icon="₹"
             iconBg="var(--violet-soft)"
-            trend="↑ 12%"
-            value={`₹${totalSpent.toLocaleString("en-IN")}`}
-            label="Spent this month"
+            value={`₹${totalSpent.toLocaleString(
+              "en-IN"
+            )}`}
+            label="Total campaign spend"
           />
 
           <KpiCard
             icon="▶"
             iconBg="var(--violet-soft)"
-            trend="↑ 34%"
             value={formatViews(totalViews)}
             label="Verified views"
           />
@@ -154,39 +204,53 @@ export default function BrandDashboard() {
           <KpiCard
             icon="✎"
             iconBg="var(--pink-soft)"
-            trend="↑ 8%"
             value={totalClips}
             label="Clips submitted"
           />
 
           <KpiCard
-            icon="✓"
+            icon="⧗"
             iconBg="var(--lime-soft)"
-            trend="↑ 5%"
-            value="92%"
-            label="Tier-1 audience"
+            value={pendingClips}
+            label="Pending review"
           />
+
         </div>
 
-        <CampaignsTable campaigns={campaigns} />
+        {/* CAMPAIGNS */}
+
+        <CampaignsTable
+          campaigns={campaignsWithStats}
+        />
+
+        {/* CLIP REVIEW INBOX */}
 
         <ClipInboxTable
           clips={clips}
           onUpdated={loadData}
         />
+
       </main>
+
     </div>
   );
 }
 
+
+// ======================================================
+// VIEW FORMATTER
+// ======================================================
+
 function formatViews(n) {
-  if (n >= 1000000) {
-    return `${(n / 1000000).toFixed(1)}M`;
+  const views = Number(n || 0);
+
+  if (views >= 1000000) {
+    return `${(views / 1000000).toFixed(1)}M`;
   }
 
-  if (n >= 1000) {
-    return `${(n / 1000).toFixed(0)}K`;
+  if (views >= 1000) {
+    return `${(views / 1000).toFixed(0)}K`;
   }
 
-  return String(n);
+  return String(views);
 }

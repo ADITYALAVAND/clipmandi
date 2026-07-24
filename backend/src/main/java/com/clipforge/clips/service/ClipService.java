@@ -19,6 +19,7 @@ import com.clipforge.clips.repository.ClipRepository;
 import com.clipforge.common.exception.BadRequestException;
 import com.clipforge.common.exception.ForbiddenException;
 import com.clipforge.common.exception.NotFoundException;
+import com.clipforge.verification.YouTubeVerificationService;
 import com.clipforge.wallet.service.WalletService;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class ClipService {
     private final CampaignRepository campaignRepository;
     private final CampaignService campaignService;
     private final WalletService walletService;
+    private final YouTubeVerificationService youtubeVerificationService;
 
     // ======================================================
     // SUBMIT CLIP
@@ -196,6 +198,50 @@ public class ClipService {
         Clip saved = clipRepository.save(clip);
 
         return ClipResponse.from(saved);
+    }
+
+    // ======================================================
+    // SYNC REAL YOUTUBE VIEWS
+    // ======================================================
+
+    @Transactional
+    public ClipResponse syncYouTubeViews(
+        UUID clipId,
+        UUID creatorId
+    ) {
+
+        Clip clip = getClipForCreator(
+            clipId,
+            creatorId
+        );
+
+        if (clip.getStatus() != ClipStatus.APPROVED) {
+            throw new BadRequestException(
+                "Only approved clips can sync YouTube views"
+            );
+        }
+
+        if (
+            clip.getPlatform() == null ||
+            !clip.getPlatform()
+                .toUpperCase()
+                .contains("YOUTUBE")
+        ) {
+            throw new BadRequestException(
+                "This clip is not a YouTube submission"
+            );
+        }
+
+        long youtubeViews =
+            youtubeVerificationService.getViews(
+                clip.getContentUrl()
+            );
+
+        return updateVerifiedViews(
+            clipId,
+            creatorId,
+            youtubeViews
+        );
     }
 
     // ======================================================

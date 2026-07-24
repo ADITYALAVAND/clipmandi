@@ -1,7 +1,7 @@
 package com.clipforge.common.config;
 
-import com.clipforge.common.security.JwtAuthFilter;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,11 +19,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.clipforge.common.security.JwtAuthFilter;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // enables @PreAuthorize on controller methods
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -33,33 +35,103 @@ public class SecurityConfig {
     private String corsAllowedOrigin;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http
+    ) throws Exception {
+
         http
-            .csrf(AbstractHttpConfigurer::disable) // stateless JWT API, not cookie-session based
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/campaigns/**").permitAll() // browsing is public
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+            .csrf(AbstractHttpConfigurer::disable)
+
+            .cors(cors ->
+                cors.configurationSource(
+                    corsConfigurationSource()
+                )
             )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(
+                    SessionCreationPolicy.STATELESS
+                )
+            )
+
+            .authorizeHttpRequests(auth -> auth
+
+                // Authentication endpoints
+                .requestMatchers(
+                    "/api/auth/**"
+                ).permitAll()
+
+                // Health check
+                .requestMatchers(
+                    "/actuator/health"
+                ).permitAll()
+
+                // Public campaign browsing
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/campaigns/**"
+                ).permitAll()
+
+                // TEMPORARY:
+                // YouTube verification testing
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/dev/youtube/views"
+                ).permitAll()
+
+                // Admin endpoints
+                .requestMatchers(
+                    "/api/admin/**"
+                ).hasRole("ADMIN")
+
+                // Everything else requires login
+                .anyRequest()
+                .authenticated()
+            )
+
+            .addFilterBefore(
+                jwtAuthFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(corsAllowedOrigin));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+
+        CorsConfiguration config =
+            new CorsConfiguration();
+
+        config.setAllowedOrigins(
+            List.of(corsAllowedOrigin)
+        );
+
+        config.setAllowedMethods(
+            List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            )
+        );
+
+        config.setAllowedHeaders(
+            List.of("*")
+        );
+
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+            "/**",
+            config
+        );
+
         return source;
     }
 

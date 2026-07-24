@@ -110,7 +110,6 @@ public class ClipController {
     // ======================================================
     // CREATOR: UPDATE VERIFIED VIEWS
     // Temporary manual verification endpoint.
-    // Later this can be driven by platform APIs/workers.
     // ======================================================
 
     @PatchMapping("/{clipId}/views")
@@ -125,6 +124,25 @@ public class ClipController {
             clipId,
             principal.getId(),
             request.views()
+        );
+    }
+
+    // ======================================================
+    // CREATOR: SYNC REAL YOUTUBE VIEWS
+    // View count comes directly from YouTube.
+    // Creator does NOT provide the number manually.
+    // ======================================================
+
+    @PostMapping("/{clipId}/sync-youtube")
+    @PreAuthorize("hasRole('CREATOR')")
+    public ClipResponse syncYouTubeViews(
+        @PathVariable UUID clipId,
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+
+        return clipService.syncYouTubeViews(
+            clipId,
+            principal.getId()
         );
     }
 }

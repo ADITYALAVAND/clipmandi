@@ -1,20 +1,27 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   approveClip,
   rejectClip,
-  updateClipViews
+  updateClipViews,
+  syncYouTubeViews
 } from "@/lib/api";
 
 export default function ClipInboxTable({
   clips = [],
   onUpdated
 }) {
+
   const [processingId, setProcessingId] = useState(null);
   const [viewInputs, setViewInputs] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // ======================================================
+  // APPROVE
+  // ======================================================
 
   async function handleApprove(id) {
     setError("");
@@ -30,9 +37,15 @@ export default function ClipInboxTable({
     }
 
     setSuccess("Clip approved successfully.");
+
     await onUpdated?.();
+
     setProcessingId(null);
   }
+
+  // ======================================================
+  // REJECT
+  // ======================================================
 
   async function handleReject(id) {
     setError("");
@@ -48,9 +61,15 @@ export default function ClipInboxTable({
     }
 
     setSuccess("Clip rejected.");
+
     await onUpdated?.();
+
     setProcessingId(null);
   }
+
+  // ======================================================
+  // MANUAL VERIFIED VIEW UPDATE
+  // ======================================================
 
   async function handleUpdateViews(clip) {
     setError("");
@@ -106,11 +125,55 @@ export default function ClipInboxTable({
     setProcessingId(null);
   }
 
+  // ======================================================
+  // AUTOMATIC YOUTUBE SYNC
+  // ======================================================
+
+  async function handleYouTubeSync(clip) {
+    setError("");
+    setSuccess("");
+    setProcessingId(clip.id);
+
+    const result = await syncYouTubeViews(
+      clip.id
+    );
+
+    if (!result) {
+      setError(
+        "Could not sync views from YouTube."
+      );
+
+      setProcessingId(null);
+      return;
+    }
+
+    setSuccess(
+      `YouTube synced successfully — ${Number(
+        result.views || 0
+      ).toLocaleString(
+        "en-IN"
+      )} verified views and ₹${Number(
+        result.earnings || 0
+      ).toLocaleString(
+        "en-IN"
+      )} total earnings.`
+    );
+
+    await onUpdated?.();
+
+    setProcessingId(null);
+  }
+
+  // ======================================================
+  // UI
+  // ======================================================
+
   return (
     <div className="panel">
 
       <div className="panel-head">
         <div>
+
           <h3>Clip inbox</h3>
 
           <div
@@ -123,8 +186,10 @@ export default function ClipInboxTable({
             {clips.length} total submission
             {clips.length === 1 ? "" : "s"}
           </div>
+
         </div>
       </div>
+
 
       {error && (
         <div
@@ -141,6 +206,7 @@ export default function ClipInboxTable({
         </div>
       )}
 
+
       {success && (
         <div
           style={{
@@ -156,7 +222,9 @@ export default function ClipInboxTable({
         </div>
       )}
 
+
       <div style={{ overflowX: "auto" }}>
+
         <table>
 
           <thead>
@@ -170,6 +238,7 @@ export default function ClipInboxTable({
               <th>Action</th>
             </tr>
           </thead>
+
 
           <tbody>
 
@@ -187,9 +256,17 @@ export default function ClipInboxTable({
               </tr>
             )}
 
+
             {clips.map((clip) => {
+
               const status =
                 clip.status?.toUpperCase();
+
+              const platform =
+                clip.platform?.toUpperCase();
+
+              const isYouTube =
+                platform === "YOUTUBE";
 
               const processing =
                 processingId === clip.id;
@@ -198,11 +275,13 @@ export default function ClipInboxTable({
                 <tr key={clip.id}>
 
                   <td>
+
                     <div className="cell-main">
 
                       <div className="thumb"></div>
 
                       <div>
+
                         <div className="t-name">
                           {clip.clipperName ||
                             clip.clipper ||
@@ -215,12 +294,17 @@ export default function ClipInboxTable({
                             fontSize: "10px"
                           }}
                         >
-                          {shortId(clip.clipperId)}
+                          {shortId(
+                            clip.clipperId
+                          )}
                         </div>
+
                       </div>
 
                     </div>
+
                   </td>
+
 
                   <td>
                     {formatPlatform(
@@ -228,7 +312,9 @@ export default function ClipInboxTable({
                     )}
                   </td>
 
+
                   <td>
+
                     {clip.contentUrl ? (
                       <a
                         href={clip.contentUrl}
@@ -241,20 +327,28 @@ export default function ClipInboxTable({
                     ) : (
                       "—"
                     )}
+
                   </td>
+
 
                   <td className="mono-cell">
                     {Number(
                       clip.views || 0
-                    ).toLocaleString("en-IN")}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
                   </td>
+
 
                   <td className="mono-cell">
                     ₹
                     {Number(
                       clip.earnings || 0
-                    ).toLocaleString("en-IN")}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
                   </td>
+
 
                   <td>
                     <StatusBadge
@@ -262,9 +356,11 @@ export default function ClipInboxTable({
                     />
                   </td>
 
+
                   <td>
 
                     {status === "PENDING" && (
+
                       <div
                         style={{
                           display: "flex",
@@ -287,6 +383,7 @@ export default function ClipInboxTable({
                             : "Approve"}
                         </button>
 
+
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -303,15 +400,42 @@ export default function ClipInboxTable({
                       </div>
                     )}
 
+
                     {status === "APPROVED" && (
+
                       <div
                         style={{
                           display: "flex",
                           gap: "8px",
                           alignItems: "center",
-                          minWidth: "250px"
+                          minWidth: "250px",
+                          flexWrap: "wrap"
                         }}
                       >
+
+                        {isYouTube && (
+
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={processing}
+                            onClick={() =>
+                              handleYouTubeSync(
+                                clip
+                              )
+                            }
+                            style={{
+                              padding: "8px 12px",
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            {processing
+                              ? "Syncing..."
+                              : "Sync YouTube"}
+                          </button>
+
+                        )}
+
 
                         <input
                           type="number"
@@ -339,9 +463,11 @@ export default function ClipInboxTable({
                               "1px solid var(--border-soft)",
                             background:
                               "var(--surface)",
-                            color: "var(--text)"
+                            color:
+                              "var(--text)"
                           }}
                         />
+
 
                         <button
                           type="button"
@@ -365,7 +491,9 @@ export default function ClipInboxTable({
                       </div>
                     )}
 
+
                     {status === "REJECTED" && (
+
                       <span
                         style={{
                           color:
@@ -375,6 +503,7 @@ export default function ClipInboxTable({
                       >
                         No action
                       </span>
+
                     )}
 
                   </td>
@@ -384,14 +513,24 @@ export default function ClipInboxTable({
             })}
 
           </tbody>
+
         </table>
+
       </div>
+
     </div>
   );
 }
 
+
+// ======================================================
+// STATUS BADGE
+// ======================================================
+
 function StatusBadge({ status }) {
+
   const styles = {
+
     PENDING: {
       background:
         "rgba(255,201,60,0.10)",
@@ -409,6 +548,7 @@ function StatusBadge({ status }) {
         "rgba(255,80,80,0.10)",
       color: "#ff6b6b"
     }
+
   };
 
   const style =
@@ -432,8 +572,15 @@ function StatusBadge({ status }) {
   );
 }
 
+
+// ======================================================
+// PLATFORM
+// ======================================================
+
 function formatPlatform(platform) {
+
   switch (platform?.toUpperCase()) {
+
     case "INSTAGRAM":
       return "Instagram";
 
@@ -448,7 +595,13 @@ function formatPlatform(platform) {
   }
 }
 
+
+// ======================================================
+// SHORT ID
+// ======================================================
+
 function shortId(id) {
+
   if (!id) return "";
 
   const value = String(id);

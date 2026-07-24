@@ -10,8 +10,6 @@ const API_BASE =
 
 async function safeFetch(path, options = {}) {
   try {
-    // Gets existing token OR automatically refreshes it
-    // if it is expired.
     const token = await getValidAccessToken();
 
     const headers = {
@@ -73,7 +71,6 @@ export async function getCampaigns(params = {}) {
 
     status: c.status?.toLowerCase(),
 
-    // These will become real aggregated values later.
     views: Number(c.views || 0),
     clipsCount: Number(c.clipsCount || 0),
 
@@ -99,8 +96,6 @@ export function createCampaign(data) {
 // CLIPS — CREATOR
 // ======================================================
 
-// Returns every clip submitted to campaigns owned
-// by the currently logged-in Creator.
 export function getClips() {
   return safeFetch("/api/clips");
 }
@@ -119,6 +114,8 @@ export function rejectClip(id) {
   });
 }
 
+
+// Temporary manual verified-view system
 export function updateClipViews(id, views) {
   return safeFetch(`/api/clips/${id}/views`, {
     method: "PATCH",
@@ -128,12 +125,22 @@ export function updateClipViews(id, views) {
   });
 }
 
+
+// ======================================================
+// YOUTUBE AUTOMATIC VIEW SYNC
+// ======================================================
+
+export function syncYouTubeViews(id) {
+  return safeFetch(`/api/clips/${id}/sync-youtube`, {
+    method: "POST"
+  });
+}
+
+
 // ======================================================
 // CLIPS — CLIPPER
 // ======================================================
 
-// Returns submissions belonging only to the
-// currently logged-in Clipper.
 export function getMyClips() {
   return safeFetch("/api/clips/mine");
 }

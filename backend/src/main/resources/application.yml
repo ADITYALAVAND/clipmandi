@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: clipforge-backend
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clipforge
+    username: clipforge
+    password: clipforge_dev_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # validate, not update/create — Flyway migrations own the schema.
+      # Hibernate should only ever confirm the entities match what Flyway built,
+      # never silently alter tables itself.
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+
+jwt:
+  # 32+ char secret required for HS256. This default is fine for local dev
+  # ONLY — production must override via the JWT_SECRET environment variable.
+  secret: ${JWT_SECRET:dev-only-secret-change-me-before-deploying-anywhere-real}
+  access-token-ttl-minutes: 15
+  refresh-token-ttl-days: 30
+
+cors:
+  allowed-origin: ${CORS_ORIGIN:http://localhost:3000}
+
+logging:
+  level:
+    com.clipforge: DEBUG
+    org.springframework.security: INFO

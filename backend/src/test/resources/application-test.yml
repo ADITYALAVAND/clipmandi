@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clipforge
+    username: clipforge
+    password: clipforge_dev_password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+jwt:
+  secret: test-only-secret-not-for-anything-real-1234567890

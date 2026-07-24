@@ -1,0 +1,2 @@
+-- V3 intentionally left empty.
+-- Wallet schema is created by V4.

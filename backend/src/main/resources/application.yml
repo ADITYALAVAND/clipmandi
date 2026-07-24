@@ -43,4 +43,4 @@ logging:
     org.springframework.security: INFO
 
 youtube:
-  api-key: ${SyCwGcKGFd5Eex_sD2wa0w5hYak9iXGL71w:}
+  api-key: ${YOUTUBE_API_KEY:}

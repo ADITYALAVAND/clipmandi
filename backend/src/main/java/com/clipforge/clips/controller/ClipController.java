@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.clipforge.campaigns.service.CampaignService;
 import com.clipforge.clips.dto.ClipResponse;
 import com.clipforge.clips.dto.SubmitClipRequest;
-import com.clipforge.clips.dto.UpdateClipViewsRequest;
 import com.clipforge.clips.service.ClipService;
 import com.clipforge.common.security.UserPrincipal;
 
@@ -108,29 +107,9 @@ public class ClipController {
     }
 
     // ======================================================
-    // CREATOR: UPDATE VERIFIED VIEWS
-    // Temporary manual verification endpoint.
-    // ======================================================
-
-    @PatchMapping("/{clipId}/views")
-    @PreAuthorize("hasRole('CREATOR')")
-    public ClipResponse updateVerifiedViews(
-        @PathVariable UUID clipId,
-        @AuthenticationPrincipal UserPrincipal principal,
-        @Valid @RequestBody UpdateClipViewsRequest request
-    ) {
-
-        return clipService.updateVerifiedViews(
-            clipId,
-            principal.getId(),
-            request.views()
-        );
-    }
-
-    // ======================================================
-    // CREATOR: SYNC REAL YOUTUBE VIEWS
-    // View count comes directly from YouTube.
-    // Creator does NOT provide the number manually.
+    // CREATOR: MANUAL YOUTUBE SYNC
+    // Automatic syncing is handled by the scheduler.
+    // This endpoint remains as a manual fallback.
     // ======================================================
 
     @PostMapping("/{clipId}/sync-youtube")
@@ -139,7 +118,6 @@ public class ClipController {
         @PathVariable UUID clipId,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-
         return clipService.syncYouTubeViews(
             clipId,
             principal.getId()

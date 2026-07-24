@@ -72,13 +72,6 @@ public class SecurityConfig {
                     "/api/campaigns/**"
                 ).permitAll()
 
-                // TEMPORARY:
-                // YouTube verification testing
-                .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/dev/youtube/views"
-                ).permitAll()
-
                 // Admin endpoints
                 .requestMatchers(
                     "/api/admin/**"

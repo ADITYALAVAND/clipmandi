@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   approveClip,
   rejectClip,
-  updateClipViews,
   syncYouTubeViews
 } from "@/lib/api";
 
@@ -15,7 +14,6 @@ export default function ClipInboxTable({
 }) {
 
   const [processingId, setProcessingId] = useState(null);
-  const [viewInputs, setViewInputs] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -68,65 +66,7 @@ export default function ClipInboxTable({
   }
 
   // ======================================================
-  // MANUAL VERIFIED VIEW UPDATE
-  // ======================================================
-
-  async function handleUpdateViews(clip) {
-    setError("");
-    setSuccess("");
-
-    const value = viewInputs[clip.id];
-
-    if (value === undefined || value === "") {
-      setError("Enter the verified view count first.");
-      return;
-    }
-
-    const views = Number(value);
-
-    if (!Number.isInteger(views) || views < 0) {
-      setError("Views must be a positive whole number.");
-      return;
-    }
-
-    if (views < Number(clip.views || 0)) {
-      setError("Verified views cannot decrease.");
-      return;
-    }
-
-    setProcessingId(clip.id);
-
-    const result = await updateClipViews(
-      clip.id,
-      views
-    );
-
-    if (!result) {
-      setError("Could not update verified views.");
-      setProcessingId(null);
-      return;
-    }
-
-    setSuccess(
-      `Views updated to ${views.toLocaleString(
-        "en-IN"
-      )}. Earnings are now ₹${Number(
-        result.earnings || 0
-      ).toLocaleString("en-IN")}.`
-    );
-
-    setViewInputs((current) => ({
-      ...current,
-      [clip.id]: ""
-    }));
-
-    await onUpdated?.();
-
-    setProcessingId(null);
-  }
-
-  // ======================================================
-  // AUTOMATIC YOUTUBE SYNC
+  // YOUTUBE MANUAL SYNC FALLBACK
   // ======================================================
 
   async function handleYouTubeSync(clip) {
@@ -408,12 +348,11 @@ export default function ClipInboxTable({
                           display: "flex",
                           gap: "8px",
                           alignItems: "center",
-                          minWidth: "250px",
                           flexWrap: "wrap"
                         }}
                       >
 
-                        {isYouTube && (
+                        {isYouTube ? (
 
                           <button
                             type="button"
@@ -434,59 +373,18 @@ export default function ClipInboxTable({
                               : "Sync YouTube"}
                           </button>
 
+                        ) : (
+
+                          <span
+                            style={{
+                              color: "var(--text-faint)",
+                              fontSize: "12px"
+                            }}
+                          >
+                            Auto verification unavailable
+                          </span>
+
                         )}
-
-
-                        <input
-                          type="number"
-                          min={clip.views || 0}
-                          placeholder="Verified views"
-                          value={
-                            viewInputs[
-                              clip.id
-                            ] ?? ""
-                          }
-                          onChange={(e) =>
-                            setViewInputs(
-                              (current) => ({
-                                ...current,
-                                [clip.id]:
-                                  e.target.value
-                              })
-                            )
-                          }
-                          style={{
-                            width: "130px",
-                            padding: "8px 10px",
-                            borderRadius: "8px",
-                            border:
-                              "1px solid var(--border-soft)",
-                            background:
-                              "var(--surface)",
-                            color:
-                              "var(--text)"
-                          }}
-                        />
-
-
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          disabled={processing}
-                          onClick={() =>
-                            handleUpdateViews(
-                              clip
-                            )
-                          }
-                          style={{
-                            padding: "8px 12px",
-                            whiteSpace: "nowrap"
-                          }}
-                        >
-                          {processing
-                            ? "Updating..."
-                            : "Update views"}
-                        </button>
 
                       </div>
                     )}

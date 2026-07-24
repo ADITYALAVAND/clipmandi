@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.clipforge.clips.entity.Clip;
+import com.clipforge.clips.entity.ClipStatus;
 
 public interface ClipRepository extends JpaRepository<Clip, UUID> {
 
@@ -37,5 +38,14 @@ public interface ClipRepository extends JpaRepository<Clip, UUID> {
     """)
     List<Clip> findAllForCreator(
         @Param("creatorId") UUID creatorId
+    );
+
+    // ======================================================
+    // AUTOMATIC YOUTUBE SYNC
+    // ======================================================
+
+    List<Clip> findByStatusAndPlatformIgnoreCase(
+        ClipStatus status,
+        String platform
     );
 }

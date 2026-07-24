@@ -19,9 +19,17 @@ public record CampaignResponse(
     BigDecimal budgetSpent,
     List<String> allowedPlatforms,
     CampaignStatus status,
+    long views,
+    long clipsCount,
     Instant createdAt
 ) {
-    public static CampaignResponse from(Campaign c) {
+
+    public static CampaignResponse from(
+        Campaign c,
+        long views,
+        long clipsCount
+    ) {
+
         return new CampaignResponse(
             c.getId(),
             c.getCreatorId(),
@@ -33,6 +41,8 @@ public record CampaignResponse(
             toRupees(c.getBudgetSpentPaise()),
             c.getAllowedPlatforms(),
             c.getStatus(),
+            views,
+            clipsCount,
             c.getCreatedAt()
         );
     }

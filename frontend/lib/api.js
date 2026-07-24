@@ -74,8 +74,8 @@ export async function getCampaigns(params = {}) {
     status: c.status?.toLowerCase(),
 
     // These will become real aggregated values later.
-    views: 0,
-    clipsCount: 0,
+    views: Number(c.views || 0),
+    clipsCount: Number(c.clipsCount || 0),
 
     createdAt: c.createdAt
   }));

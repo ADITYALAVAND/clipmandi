@@ -15,6 +15,17 @@ public interface ClipRepository extends JpaRepository<Clip, UUID> {
 
     List<Clip> findByCampaignIdOrderBySubmittedAtDesc(UUID campaignId);
 
+    long countByCampaignId(UUID campaignId);
+
+    @Query("""
+        SELECT COALESCE(SUM(clip.views), 0)
+        FROM Clip clip
+        WHERE clip.campaignId = :campaignId
+    """)
+    Long sumViewsByCampaignId(
+        @Param("campaignId") UUID campaignId
+    );
+
     @Query("""
         SELECT clip
         FROM Clip clip

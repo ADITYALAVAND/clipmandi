@@ -16,6 +16,7 @@ import com.clipforge.clips.dto.SubmitClipRequest;
 import com.clipforge.clips.entity.Clip;
 import com.clipforge.clips.entity.ClipStatus;
 import com.clipforge.clips.repository.ClipRepository;
+import com.clipforge.clips.validation.PlatformUrlValidator;
 import com.clipforge.common.exception.BadRequestException;
 import com.clipforge.common.exception.ForbiddenException;
 import com.clipforge.common.exception.NotFoundException;
@@ -33,6 +34,7 @@ public class ClipService {
     private final CampaignService campaignService;
     private final WalletService walletService;
     private final YouTubeVerificationService youtubeVerificationService;
+    private final PlatformUrlValidator platformUrlValidator;
 
     // ======================================================
     // SUBMIT CLIP
@@ -68,13 +70,19 @@ public class ClipService {
                 "This platform is not allowed for this campaign"
             );
         }
+        String contentUrl = req.contentUrl().trim();
+
+            platformUrlValidator.validate(
+            platform,
+            contentUrl
+        );
 
         Clip clip = new Clip();
 
         clip.setCampaignId(campaign.getId());
         clip.setClipperId(clipperId);
         clip.setPlatform(platform);
-        clip.setContentUrl(req.contentUrl().trim());
+        clip.setContentUrl(contentUrl);
 
         clip.setStatus(ClipStatus.PENDING);
         clip.setViews(0L);

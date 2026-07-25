@@ -26,8 +26,31 @@ async function safeFetch(path, options = {}) {
       headers
     });
 
+    // ======================================================
+    // HANDLE BACKEND ERRORS
+    // ======================================================
+
     if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
+      let message = `Request failed: ${res.status}`;
+
+      try {
+        const errorBody = await res.json();
+
+        if (errorBody?.message) {
+          message = errorBody.message;
+        }
+      } catch {
+        // Response wasn't JSON.
+        // Keep the fallback message above.
+      }
+
+      console.error(`[api] ${path} failed:`, message);
+
+      return {
+        __error: true,
+        status: res.status,
+        message
+      };
     }
 
     if (res.status === 204) {
@@ -38,10 +61,15 @@ async function safeFetch(path, options = {}) {
 
   } catch (err) {
     console.error(`[api] ${path} failed:`, err.message);
-    return null;
+
+    return {
+      __error: true,
+      status: 0,
+      message:
+        "Could not connect to the server. Please try again."
+    };
   }
 }
-
 
 // ======================================================
 // CAMPAIGNS
@@ -115,21 +143,9 @@ export function rejectClip(id) {
 }
 
 
-// Temporary manual verified-view system
-export function updateClipViews(id, views) {
-  return safeFetch(`/api/clips/${id}/views`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      views: Number(views)
-    })
-  });
-}
-
-
-// ======================================================
-// YOUTUBE AUTOMATIC VIEW SYNC
-// ======================================================
-
+// Manual fallback.
+// Normal YouTube verification is handled automatically
+// by the backend scheduler.
 export function syncYouTubeViews(id) {
   return safeFetch(`/api/clips/${id}/sync-youtube`, {
     method: "POST"

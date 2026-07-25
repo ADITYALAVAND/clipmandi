@@ -94,63 +94,59 @@ export default function CampaignDetailsPage() {
   // ======================================================
 
   async function handleSubmitClip(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    setSubmitError("");
-    setSubmitSuccess("");
+  setSubmitError("");
+  setSubmitSuccess("");
 
-    if (!platform) {
-      setSubmitError("Please choose a platform.");
-      return;
-    }
-
-    if (!contentUrl.trim()) {
-      setSubmitError("Please paste your published clip URL.");
-      return;
-    }
-
-    try {
-      new URL(contentUrl.trim());
-    } catch {
-      setSubmitError("Please enter a valid URL.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    const result = await submitClip({
-      campaignId,
-      platform,
-      contentUrl: contentUrl.trim()
-    });
-
-    setSubmitting(false);
-
-    if (!result) {
-      setSubmitError(
-        "Clip could not be submitted. Please check the URL and try again."
-      );
-      return;
-    }
-
-    setSubmitSuccess(
-      "Clip submitted successfully! It is now pending creator review."
-    );
-
-    setContentUrl("");
+  if (!platform) {
+    setSubmitError("Please choose a platform.");
+    return;
   }
 
-  // ======================================================
-  // AUTH CHECK
-  // ======================================================
-
-  if (!authChecked) {
-    return (
-      <main className={styles.center}>
-        <p className={styles.muted}>Checking session...</p>
-      </main>
-    );
+  if (!contentUrl.trim()) {
+    setSubmitError("Please paste your published clip URL.");
+    return;
   }
+
+  try {
+    new URL(contentUrl.trim());
+  } catch {
+    setSubmitError("Please enter a valid URL.");
+    return;
+  }
+
+  setSubmitting(true);
+
+  const result = await submitClip({
+    campaignId,
+    platform,
+    contentUrl: contentUrl.trim()
+  });
+
+  setSubmitting(false);
+
+  if (result?.__error) {
+    setSubmitError(
+      result.message ||
+        "Clip could not be submitted. Please try again."
+    );
+    return;
+  }
+
+  if (!result) {
+    setSubmitError(
+      "Clip could not be submitted. Please try again."
+    );
+    return;
+  }
+
+  setSubmitSuccess(
+    "Clip submitted successfully! It is now pending creator review."
+  );
+
+  setContentUrl("");
+}
 
   // ======================================================
   // LOADING

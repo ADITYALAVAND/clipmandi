@@ -63,8 +63,17 @@ export default function BrandDashboard() {
       getClips()
     ]);
 
-    setCampaigns(campaignData || []);
-    setClips(clipData || []);
+   setCampaigns(
+  campaignData?.__error
+    ? []
+    : campaignData || []
+);
+
+setClips(
+  clipData?.__error
+    ? []
+    : clipData || []
+);
 
     setLoading(false);
   }, []);

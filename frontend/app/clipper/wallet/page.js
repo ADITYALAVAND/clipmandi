@@ -1,30 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import KpiCard from "@/components/dashboard/KpiCard";
-import CampaignGrid from "@/components/dashboard/CampaignGrid";
-import MyClipsTable from "@/components/dashboard/MyClipsTable";
 import WalletBox from "@/components/dashboard/WalletBox";
 
-import {
-  getCampaigns,
-  getMyClips,
-  getWallet
-} from "@/lib/api";
-
+import { getWallet } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
-export default function ClipperDashboard() {
+export default function ClipperWalletPage() {
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState([]);
-  const [clips, setClips] = useState([]);
-
   // ======================================================
-  // REAL WALLET STATE
+  // STATE
   // ======================================================
 
   const [wallet, setWallet] = useState({
@@ -35,7 +30,10 @@ export default function ClipperDashboard() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [authChecked, setAuthChecked] =
+    useState(false);
+
+  const [error, setError] = useState("");
 
   const [user, setUser] = useState({
     displayName: "",
@@ -62,6 +60,7 @@ export default function ClipperDashboard() {
     setUser({
       displayName:
         currentUser.displayName || "Clipper",
+
       role: currentUser.role
     });
 
@@ -69,57 +68,52 @@ export default function ClipperDashboard() {
   }, [router]);
 
   // ======================================================
-  // LOAD REAL DASHBOARD DATA
+  // LOAD WALLET
   // ======================================================
 
-  const loadData = useCallback(async () => {
+  const loadWallet = useCallback(async () => {
     setLoading(true);
+    setError("");
 
     try {
-      const [
-        campaignData,
-        clipData,
-        walletData
-      ] = await Promise.all([
-        getCampaigns({ status: "LIVE" }),
-        getMyClips(),
-        getWallet()
-      ]);
+      const walletData = await getWallet();
 
-     // Real campaigns
-setCampaigns(
-  campaignData?.__error
-    ? []
-    : campaignData || []
-);
+      if (
+        walletData?.__error ||
+        !walletData
+      ) {
+        setError(
+          walletData?.message ||
+            "Wallet could not be loaded."
+        );
 
-// Real clipper submissions
-setClips(
-  clipData?.__error
-    ? []
-    : clipData || []
-);
-
-// Real wallet
-setWallet(
-  walletData?.__error
-    ? {
-        balance: 0,
-        totalEarned: 0,
-        totalWithdrawn: 0,
-        transactions: []
+        return;
       }
-    : walletData || {
-        balance: 0,
-        totalEarned: 0,
-        totalWithdrawn: 0,
-        transactions: []
-      }
-);
-    } catch (error) {
+
+      setWallet({
+        balance: Number(
+          walletData.balance || 0
+        ),
+
+        totalEarned: Number(
+          walletData.totalEarned || 0
+        ),
+
+        totalWithdrawn: Number(
+          walletData.totalWithdrawn || 0
+        ),
+
+        transactions:
+          walletData.transactions || []
+      });
+    } catch (err) {
       console.error(
-        "Failed to load clipper dashboard:",
-        error
+        "Failed to load wallet:",
+        err
+      );
+
+      setError(
+        "Wallet could not be loaded."
       );
     } finally {
       setLoading(false);
@@ -128,9 +122,9 @@ setWallet(
 
   useEffect(() => {
     if (authChecked) {
-      loadData();
+      loadWallet();
     }
-  }, [authChecked, loadData]);
+  }, [authChecked, loadWallet]);
 
   // ======================================================
   // AUTH LOADING
@@ -158,22 +152,7 @@ setWallet(
   }
 
   // ======================================================
-  // DASHBOARD STATS
-  // ======================================================
-
-  const pendingCount = clips.filter(
-    (clip) =>
-      clip.status?.toUpperCase() === "PENDING"
-  ).length;
-
-  const totalViews = clips.reduce(
-    (sum, clip) =>
-      sum + Number(clip.views || 0),
-    0
-  );
-
-  // ======================================================
-  // DASHBOARD
+  // WALLET PAGE
   // ======================================================
 
   return (
@@ -191,100 +170,100 @@ setWallet(
 
         <div className="dash-header">
           <div>
-            <h1>Browse campaigns</h1>
+            <h1>Wallet</h1>
 
             <div className="greet">
-              {loading
-                ? "Loading the floor…"
-                : `${campaigns.length} campaigns live right now.`}
+              Manage your ClipMandi earnings
+              and withdrawals.
             </div>
           </div>
-
-          <button
-            type="button"
-            className="btn btn-ghost"
-          >
-            Filter: All niches ▾
-          </button>
         </div>
+
+        {/* ERROR */}
+
+        {error && (
+          <div
+            className="panel"
+            style={{
+              padding: "18px",
+              marginBottom: "20px"
+            }}
+          >
+            <span
+              style={{
+                color: "var(--text-dim)"
+              }}
+            >
+              {error}
+            </span>
+          </div>
+        )}
 
         {/* KPI CARDS */}
 
         <div className="cards-row">
 
-          {/* REAL TOTAL EARNINGS */}
-
           <KpiCard
             icon="₹"
             iconBg="var(--violet-soft)"
-            value={`₹${Number(
-              wallet.totalEarned || 0
-            ).toLocaleString("en-IN")}`}
+            value={
+              loading
+                ? "—"
+                : `₹${Number(
+                    wallet.balance || 0
+                  ).toLocaleString("en-IN")}`
+            }
+            label="Available balance"
+          />
+
+          <KpiCard
+            icon="↑"
+            iconBg="var(--lime-soft)"
+            value={
+              loading
+                ? "—"
+                : `₹${Number(
+                    wallet.totalEarned || 0
+                  ).toLocaleString("en-IN")}`
+            }
             label="Total earned"
           />
 
-          {/* PENDING CLIPS */}
-
           <KpiCard
-            icon="⧗"
-            iconBg="var(--lime-soft)"
-            value={pendingCount}
-            label="Pending review"
-          />
-
-          {/* TOTAL CLIPS */}
-
-          <KpiCard
-            icon="✎"
+            icon="↗"
             iconBg="var(--pink-soft)"
-            value={clips.length}
-            label="Clips posted total"
-          />
-
-          {/* VERIFIED VIEWS */}
-
-          <KpiCard
-            icon="▶"
-            iconBg="var(--lime-soft)"
-            value={formatViews(totalViews)}
-            label="Lifetime verified views"
+            value={
+              loading
+                ? "—"
+                : `₹${Number(
+                    wallet.totalWithdrawn || 0
+                  ).toLocaleString("en-IN")}`
+            }
+            label="Total withdrawn"
           />
 
         </div>
 
-        {/* LIVE CAMPAIGNS */}
+        {/* WALLET CONTENT */}
 
-        <CampaignGrid
-          campaigns={campaigns}
-        />
+        {!loading && !error && (
+          <div
+            className="grid-2"
+            style={{
+              marginTop: "8px"
+            }}
+          >
 
-        {/* CLIPS + WALLET */}
-
-        <div
-          className="grid-2"
-          style={{
-            marginTop: "8px"
-          }}
-        >
-
-          {/* REAL CLIPS */}
-
-          <MyClipsTable
-            clips={clips}
-          />
-
-          <div>
-
-            {/* REAL WALLET BALANCE */}
+            {/* WITHDRAW */}
 
             <WalletBox
               balance={Number(
                 wallet.balance || 0
               )}
-              onUpdated={loadData}
+              onUpdated={loadWallet}
             />
 
-            {/* REAL TRANSACTIONS */}
+            {/* TRANSACTIONS */}
 
             <div
               className="panel"
@@ -294,19 +273,31 @@ setWallet(
             >
               <h3
                 style={{
-                  marginBottom: "14px"
+                  marginBottom: "6px"
                 }}
               >
                 Recent transactions
               </h3>
 
+              <div
+                style={{
+                  color: "var(--text-faint)",
+                  fontSize: "13px",
+                  marginBottom: "16px"
+                }}
+              >
+                Your latest wallet activity.
+              </div>
+
               {(!wallet.transactions ||
-                wallet.transactions.length === 0) && (
+                wallet.transactions.length ===
+                  0) && (
                 <div
                   style={{
-                    color: "var(--text-faint)",
+                    color:
+                      "var(--text-faint)",
                     fontSize: "13px",
-                    padding: "12px 0"
+                    padding: "20px 0"
                   }}
                 >
                   No transactions yet.
@@ -314,9 +305,8 @@ setWallet(
               )}
 
               {(wallet.transactions || [])
-                .slice(0, 4)
+                .slice(0, 8)
                 .map((transaction) => {
-
                   const amount = Number(
                     transaction.amount || 0
                   );
@@ -330,21 +320,42 @@ setWallet(
                           "space-between",
                         alignItems: "center",
                         gap: "15px",
-                        fontSize: "13px",
-                        padding: "10px 0",
+
+                        padding: "13px 0",
+
                         borderTop:
                           "1px solid var(--border-soft)"
                       }}
                     >
-                      <span
-                        style={{
-                          color:
-                            "var(--text-dim)"
-                        }}
-                      >
-                        {transaction.note ||
-                          "Wallet transaction"}
-                      </span>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color:
+                              "var(--text-dim)"
+                          }}
+                        >
+                          {transaction.note ||
+                            "Wallet transaction"}
+                        </div>
+
+                        {transaction.createdAt && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color:
+                                "var(--text-faint)",
+                              marginTop: "4px"
+                            }}
+                          >
+                            {new Date(
+                              transaction.createdAt
+                            ).toLocaleDateString(
+                              "en-IN"
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       <span
                         className="mono-cell"
@@ -357,44 +368,22 @@ setWallet(
                       >
                         {amount > 0 ? "+" : ""}
 
-                        ₹{amount.toLocaleString(
+                        ₹
+                        {Math.abs(
+                          amount
+                        ).toLocaleString(
                           "en-IN"
                         )}
                       </span>
                     </div>
                   );
                 })}
-
             </div>
 
           </div>
-
-        </div>
+        )}
 
       </main>
     </div>
   );
-}
-
-
-// ======================================================
-// VIEW FORMATTER
-// ======================================================
-
-function formatViews(n) {
-  const views = Number(n || 0);
-
-  if (views >= 1000000) {
-    return `${(
-      views / 1000000
-    ).toFixed(1)}M`;
-  }
-
-  if (views >= 1000) {
-    return `${(
-      views / 1000
-    ).toFixed(0)}K`;
-  }
-
-  return String(views);
 }

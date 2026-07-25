@@ -20,7 +20,11 @@ export default function LandingPage() {
         status: "LIVE"
       });
 
-      setCampaigns(data || []);
+      setCampaigns(
+  data?.__error
+    ? []
+    : data || []
+);
     }
 
     loadCampaigns();

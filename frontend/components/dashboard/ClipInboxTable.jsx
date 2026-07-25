@@ -28,11 +28,14 @@ export default function ClipInboxTable({
 
     const result = await approveClip(id);
 
-    if (!result) {
-      setError("Could not approve this clip.");
-      setProcessingId(null);
-      return;
-    }
+    if (result?.__error || !result) {
+  setError(
+    result?.message ||
+      "Could not approve this clip."
+  );
+  setProcessingId(null);
+  return;
+}
 
     setSuccess("Clip approved successfully.");
 
@@ -52,11 +55,14 @@ export default function ClipInboxTable({
 
     const result = await rejectClip(id);
 
-    if (!result) {
-      setError("Could not reject this clip.");
-      setProcessingId(null);
-      return;
-    }
+   if (result?.__error || !result) {
+  setError(
+    result?.message ||
+      "Could not reject this clip."
+  );
+  setProcessingId(null);
+  return;
+}
 
     setSuccess("Clip rejected.");
 
@@ -78,14 +84,15 @@ export default function ClipInboxTable({
       clip.id
     );
 
-    if (!result) {
-      setError(
-        "Could not sync views from YouTube."
-      );
+    if (result?.__error || !result) {
+  setError(
+    result?.message ||
+      "Could not sync views from YouTube."
+  );
 
-      setProcessingId(null);
-      return;
-    }
+  setProcessingId(null);
+  return;
+}
 
     setSuccess(
       `YouTube synced successfully — ${Number(

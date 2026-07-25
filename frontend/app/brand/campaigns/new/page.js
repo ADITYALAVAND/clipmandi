@@ -30,6 +30,7 @@ export default function NewCampaignPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+}
 
   // --------------------------------------------------
   // Authentication
@@ -137,15 +138,20 @@ export default function NewCampaignPage() {
 
     setLoading(false);
 
+    if (result?.__error) {
+  setError(
+    result.message ||
+      "Campaign could not be created. Please check your details and try again."
+  );
+  return;
+}
+
     if (!result) {
       setError(
         "Campaign could not be created. Please check your details and try again."
       );
       return;
-    }
-
-    router.push("/brand");
-  }
+}
 
   // --------------------------------------------------
   // Authentication loading

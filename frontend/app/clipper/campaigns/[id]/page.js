@@ -71,11 +71,20 @@ export default function CampaignDetailsPage() {
 
       const data = await getCampaign(campaignId);
 
-      if (!data) {
-        setError("Campaign could not be loaded.");
-        setLoading(false);
-        return;
-      }
+     if (data?.__error) {
+  setError(
+    data.message ||
+      "Campaign could not be loaded."
+  );
+  setLoading(false);
+  return;
+}
+
+if (!data) {
+  setError("Campaign could not be loaded.");
+  setLoading(false);
+  return;
+}
 
       setCampaign(data);
 

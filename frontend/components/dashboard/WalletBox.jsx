@@ -9,13 +9,28 @@ export default function WalletBox({ balance, onUpdated }) {
   const [submitting, setSubmitting] = useState(false);
 
   async function handleWithdraw() {
-    if (!upiId || !amount) return;
-    setSubmitting(true);
-    await withdrawFromWallet({ amount: Number(amount), upiId });
-    setSubmitting(false);
-    setAmount("");
-    onUpdated?.();
+  if (!upiId || !amount) return;
+
+  setSubmitting(true);
+
+  const result = await withdrawFromWallet({
+    amount: Number(amount),
+    upiId
+  });
+
+  setSubmitting(false);
+
+  if (result?.__error || !result) {
+    alert(
+      result?.message ||
+        "Withdrawal could not be completed."
+    );
+    return;
   }
+
+  setAmount("");
+  onUpdated?.();
+}
 
   return (
     <div className="wallet-box">

@@ -16,11 +16,30 @@ import CampaignsTable from "@/components/dashboard/CampaignsTable";
 import {
   getCampaigns,
   getClips,
-  fundCampaign
+  createCampaignPaymentOrder,
+  verifyCampaignPayment
 } from "@/lib/api";
 
-import { getCurrentUser } from "@/lib/auth";
 
+
+import { getCurrentUser } from "@/lib/auth";
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+
+    document.body.appendChild(script);
+  });
+}
 export default function BrandCampaignsPage() {
   const router = useRouter();
 
@@ -119,8 +138,8 @@ export default function BrandCampaignsPage() {
     }
   }, [authChecked, loadData]);
 
-  // ======================================================
-// DEV: FUND CAMPAIGN
+ // ======================================================
+// FUND CAMPAIGN — RAZORPAY
 // ======================================================
 
 async function handleFundCampaign(campaignId) {
@@ -128,34 +147,113 @@ async function handleFundCampaign(campaignId) {
   setError("");
 
   try {
-    const result = await fundCampaign(campaignId);
+    // Load Razorpay Checkout
+    const loaded = await loadRazorpayScript();
 
-    if (result?.__error || !result) {
+    if (!loaded) {
+      setError("Could not load the payment gateway. Please try again.");
+      return;
+    }
+
+    // Create order securely on our backend
+    const order = await createCampaignPaymentOrder(campaignId);
+
+    if (order?.__error || !order?.razorpayOrderId) {
       setError(
-        result?.message ||
-          "Campaign could not be funded."
+        order?.message ||
+          "Could not create the payment order."
       );
       return;
     }
 
-    // Reload campaigns so PENDING_FUNDING becomes LIVE.
-    await loadData();
+    const options = {
+      key: order.keyId,
+      amount: order.amountPaise,
+      currency: order.currency,
+      name: "ClipMandi",
+      description: "Campaign funding",
+      order_id: order.razorpayOrderId,
+
+      handler: async function (response) {
+        try {
+          const verification =
+            await verifyCampaignPayment({
+              razorpayOrderId:
+                response.razorpay_order_id,
+
+              razorpayPaymentId:
+                response.razorpay_payment_id,
+
+              razorpaySignature:
+                response.razorpay_signature
+            });
+
+          if (verification?.__error) {
+            setError(
+              verification.message ||
+                "Payment verification failed."
+            );
+            return;
+          }
+
+          // Payment verified by Spring Boot.
+          await loadData();
+
+        } catch (err) {
+          console.error(
+            "Payment verification failed:",
+            err
+          );
+
+          setError(
+            "Payment was received but verification failed. Please contact support before paying again."
+          );
+        }
+      },
+
+      modal: {
+        ondismiss: function () {
+          setFundingId(null);
+        }
+      },
+
+      theme: {
+        color: "#7c3aed"
+      }
+    };
+
+    const razorpay = new window.Razorpay(options);
+
+    razorpay.on("payment.failed", function (response) {
+      console.error(
+        "Razorpay payment failed:",
+        response.error
+      );
+
+      setError(
+        response.error?.description ||
+          "Payment failed. Please try again."
+      );
+
+      setFundingId(null);
+    });
+
+    razorpay.open();
 
   } catch (err) {
     console.error(
-      "Failed to fund campaign:",
+      "Failed to start campaign payment:",
       err
     );
 
     setError(
-      "Campaign could not be funded."
+      "Could not start the payment. Please try again."
     );
 
   } finally {
-    setFundingId(null);
+    // Don't clear fundingId here because Razorpay is asynchronous.
   }
 }
-
   // ======================================================
   // AUTH LOADING
   // ======================================================

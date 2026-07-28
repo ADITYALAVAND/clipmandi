@@ -121,9 +121,20 @@ export function createCampaign(data) {
 
 
 }
-  export function fundCampaign(campaignId) {
-  return safeFetch(`/api/campaigns/${campaignId}/fund`, {
+ // ======================================================
+// CAMPAIGN PAYMENTS — CREATOR
+// ======================================================
+
+export function createCampaignPaymentOrder(campaignId) {
+  return safeFetch(`/api/payments/campaigns/${campaignId}/order`, {
     method: "POST"
+  });
+}
+
+export function verifyCampaignPayment(data) {
+  return safeFetch("/api/payments/verify", {
+    method: "POST",
+    body: JSON.stringify(data)
   });
 }
 

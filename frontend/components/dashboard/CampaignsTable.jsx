@@ -64,8 +64,7 @@ export default function CampaignsTable({
                   ? Math.min(
                       100,
                       Math.round(
-                        (budgetSpent / budgetTotal) *
-                          100
+                        (budgetSpent / budgetTotal) * 100
                       )
                     )
                   : 0;
@@ -93,9 +92,7 @@ export default function CampaignsTable({
                             c.cpm || 0
                           ).toLocaleString("en-IN")}
                           {" · "}
-                          {(c.platforms || []).join(
-                            ", "
-                          )}
+                          {(c.platforms || []).join(", ")}
                         </div>
                       </div>
                     </div>
@@ -146,15 +143,13 @@ export default function CampaignsTable({
                   </td>
 
                   <td>
-                    {isPendingFunding ? (
+                    {isPendingFunding &&
+                    typeof onFund === "function" ? (
                       <button
                         type="button"
                         className="btn btn-primary"
                         disabled={isFunding}
-                        onClick={() => {
-  console.log("REACT FUND BUTTON CLICK", c.id);
-  onFund(c.id);
-}}
+                        onClick={() => onFund(c.id)}
                         style={{
                           padding: "7px 12px",
                           fontSize: "12px"
@@ -167,8 +162,7 @@ export default function CampaignsTable({
                     ) : (
                       <span
                         style={{
-                          color:
-                            "var(--text-faint)"
+                          color: "var(--text-faint)"
                         }}
                       >
                         —
@@ -189,9 +183,7 @@ function formatViews(n) {
   const views = Number(n || 0);
 
   if (views >= 1000000) {
-    return `${(views / 1000000).toFixed(
-      1
-    )}M`;
+    return `${(views / 1000000).toFixed(1)}M`;
   }
 
   if (views >= 1000) {

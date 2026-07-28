@@ -151,9 +151,10 @@ export default function CampaignsTable({
                         type="button"
                         className="btn btn-primary"
                         disabled={isFunding}
-                        onClick={() =>
-                          onFund?.(c.id)
-                        }
+                        onClick={() => {
+  console.log("REACT FUND BUTTON CLICK", c.id);
+  onFund(c.id);
+}}
                         style={{
                           padding: "7px 12px",
                           fontSize: "12px"

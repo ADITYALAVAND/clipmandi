@@ -21,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.clipforge.common.security.JwtAuthFilter;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -33,6 +34,11 @@ public class SecurityConfig {
 
     @Value("${cors.allowed-origin}")
     private String corsAllowedOrigin;
+
+    @PostConstruct
+    public void logCorsOrigin() {
+    System.out.println("CORS ALLOWED ORIGIN = [" + corsAllowedOrigin + "]");
+}
 
     @Bean
     public SecurityFilterChain filterChain(

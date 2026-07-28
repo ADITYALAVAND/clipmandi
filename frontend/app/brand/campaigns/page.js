@@ -15,7 +15,8 @@ import CampaignsTable from "@/components/dashboard/CampaignsTable";
 
 import {
   getCampaigns,
-  getClips
+  getClips,
+  fundCampaign
 } from "@/lib/api";
 
 import { getCurrentUser } from "@/lib/auth";
@@ -31,6 +32,7 @@ export default function BrandCampaignsPage() {
     useState(false);
 
   const [error, setError] = useState("");
+  const [fundingId, setFundingId] = useState(null);
 
   const [user, setUser] = useState({
     displayName: "",
@@ -116,6 +118,43 @@ export default function BrandCampaignsPage() {
       loadData();
     }
   }, [authChecked, loadData]);
+
+  // ======================================================
+// DEV: FUND CAMPAIGN
+// ======================================================
+
+async function handleFundCampaign(campaignId) {
+  setFundingId(campaignId);
+  setError("");
+
+  try {
+    const result = await fundCampaign(campaignId);
+
+    if (result?.__error || !result) {
+      setError(
+        result?.message ||
+          "Campaign could not be funded."
+      );
+      return;
+    }
+
+    // Reload campaigns so PENDING_FUNDING becomes LIVE.
+    await loadData();
+
+  } catch (err) {
+    console.error(
+      "Failed to fund campaign:",
+      err
+    );
+
+    setError(
+      "Campaign could not be funded."
+    );
+
+  } finally {
+    setFundingId(null);
+  }
+}
 
   // ======================================================
   // AUTH LOADING
@@ -305,6 +344,8 @@ export default function BrandCampaignsPage() {
         {!loading && !error && (
           <CampaignsTable
             campaigns={campaignsWithStats}
+            onFund={handleFundCampaign}
+            fundingId={fundingId}
           />
         )}
 

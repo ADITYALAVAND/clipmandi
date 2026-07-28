@@ -9,6 +9,7 @@ import { createCampaign } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
 export default function NewCampaignPage() {
+  
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
@@ -30,7 +31,7 @@ export default function NewCampaignPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-}
+
 
   // --------------------------------------------------
   // Authentication
@@ -147,11 +148,19 @@ export default function NewCampaignPage() {
 }
 
     if (!result) {
-      setError(
-        "Campaign could not be created. Please check your details and try again."
-      );
-      return;
+  setError(
+    "Campaign could not be created. Please check your details and try again."
+  );
+  return;
 }
+
+// Campaign created successfully
+router.push("/brand");
+}
+
+// --------------------------------------------------
+// Authentication loading
+// --------------------------------------------------
 
   // --------------------------------------------------
   // Authentication loading

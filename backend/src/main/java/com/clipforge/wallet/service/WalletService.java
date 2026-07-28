@@ -1,12 +1,16 @@
 package com.clipforge.wallet.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clipforge.common.exception.BadRequestException;
 import com.clipforge.wallet.dto.WalletResponse;
+import com.clipforge.wallet.dto.WithdrawRequest;
 import com.clipforge.wallet.entity.Wallet;
 import com.clipforge.wallet.entity.WalletTransaction;
 import com.clipforge.wallet.entity.WalletTransactionType;
@@ -85,6 +89,94 @@ public class WalletService {
 
         transactionRepository.save(transaction);
     }
+
+    // ======================================================
+// WITHDRAW FROM WALLET
+// ======================================================
+
+@Transactional
+public WalletResponse withdraw(
+    UUID userId,
+    WithdrawRequest request
+) {
+
+    // Convert rupees from API request into paise.
+    long amountPaise;
+
+    try {
+        amountPaise = request.amount()
+            .multiply(BigDecimal.valueOf(100))
+            .setScale(0, RoundingMode.UNNECESSARY)
+            .longValueExact();
+    } catch (ArithmeticException ex) {
+        throw new BadRequestException(
+            "Invalid withdrawal amount"
+        );
+    }
+
+    if (amountPaise <= 0) {
+        throw new BadRequestException(
+            "Withdrawal amount must be greater than zero"
+        );
+    }
+
+    String upiId = request.upiId().trim();
+
+    if (upiId.isEmpty()) {
+        throw new BadRequestException(
+            "UPI ID is required"
+        );
+    }
+
+    Wallet wallet = getOrCreateWallet(userId);
+
+    if (wallet.getBalancePaise() < amountPaise) {
+        throw new BadRequestException(
+            "Insufficient wallet balance"
+        );
+    }
+
+    // Deduct available balance.
+    wallet.setBalancePaise(
+        wallet.getBalancePaise() - amountPaise
+    );
+
+    // Track lifetime withdrawals.
+    wallet.setTotalWithdrawnPaise(
+        wallet.getTotalWithdrawnPaise() + amountPaise
+    );
+
+    walletRepository.save(wallet);
+
+    // Record withdrawal in transaction history.
+    WalletTransaction transaction =
+        new WalletTransaction();
+
+    transaction.setWalletId(wallet.getId());
+    transaction.setType(
+        WalletTransactionType.WITHDRAWAL
+    );
+
+    // Negative amount represents money leaving the wallet.
+    transaction.setAmountPaise(-amountPaise);
+
+    transaction.setNote(
+        "Withdrawal to " + upiId
+    );
+
+    transactionRepository.save(transaction);
+
+    List<WalletTransaction> transactions =
+        transactionRepository
+            .findByWalletIdOrderByCreatedAtDesc(
+                wallet.getId()
+            );
+
+    return WalletResponse.from(
+        wallet,
+        transactions
+    );
+}
 
     // ======================================================
     // GET OR CREATE WALLET

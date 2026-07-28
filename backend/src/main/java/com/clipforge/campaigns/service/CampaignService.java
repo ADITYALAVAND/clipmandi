@@ -64,7 +64,7 @@ public class CampaignService {
         );
 
         campaign.setStatus(
-            CampaignStatus.LIVE
+            CampaignStatus.PENDING_FUNDING
         );
 
         Campaign saved =
@@ -270,4 +270,58 @@ public class CampaignService {
             )
             .longValueExact();
     }
+    // ======================================================
+// DEV: FUND CAMPAIGN
+// ======================================================
+
+@Transactional
+public CampaignResponse fundCampaign(
+    UUID campaignId,
+    UUID creatorId
+) {
+
+    Campaign campaign =
+        campaignRepository
+            .findByIdAndDeletedAtIsNull(campaignId)
+            .orElseThrow(
+                () -> new NotFoundException(
+                    "Campaign not found"
+                )
+            );
+
+    // Only the owner can fund this campaign.
+    if (!campaign.getCreatorId().equals(creatorId)) {
+        throw new ForbiddenException(
+            "You don't have access to this campaign"
+        );
+    }
+
+    // Only campaigns waiting for funding can be funded.
+    if (
+        campaign.getStatus()
+            != CampaignStatus.PENDING_FUNDING
+    ) {
+        throw new BadRequestException(
+            "Campaign is not awaiting funding"
+        );
+    }
+
+    /*
+     * DEVELOPMENT ONLY:
+     *
+     * No real payment happens here.
+     * For now we simulate successful funding.
+     *
+     * Later this status change must happen only after
+     * payment-provider verification.
+     */
+    campaign.setStatus(
+        CampaignStatus.LIVE
+    );
+
+    Campaign saved =
+        campaignRepository.save(campaign);
+
+    return toResponse(saved);
+}
 }

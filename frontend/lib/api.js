@@ -117,6 +117,14 @@ export function createCampaign(data) {
     method: "POST",
     body: JSON.stringify(data)
   });
+
+
+
+}
+  export function fundCampaign(campaignId) {
+  return safeFetch(`/api/campaigns/${campaignId}/fund`, {
+    method: "POST"
+  });
 }
 
 

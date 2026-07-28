@@ -44,3 +44,7 @@ logging:
 
 youtube:
   api-key: ${YOUTUBE_API_KEY:}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}

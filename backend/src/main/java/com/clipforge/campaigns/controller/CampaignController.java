@@ -1,12 +1,7 @@
 package com.clipforge.campaigns.controller;
 
-import com.clipforge.campaigns.dto.CampaignResponse;
-import com.clipforge.campaigns.dto.CreateCampaignRequest;
-import com.clipforge.campaigns.entity.CampaignStatus;
-import com.clipforge.campaigns.service.CampaignService;
-import com.clipforge.common.security.UserPrincipal;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -14,9 +9,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
+import com.clipforge.campaigns.dto.CampaignResponse;
+import com.clipforge.campaigns.dto.CreateCampaignRequest;
+import com.clipforge.campaigns.entity.CampaignStatus;
+import com.clipforge.campaigns.service.CampaignService;
+import com.clipforge.common.security.UserPrincipal;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/campaigns")
@@ -46,4 +54,22 @@ public class CampaignController {
     public ResponseEntity<CampaignResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(campaignService.getById(id));
     }
+    // ======================================================
+// DEV: SIMULATE CAMPAIGN FUNDING
+// ======================================================
+
+@PostMapping("/{id}/fund")
+@PreAuthorize("hasRole('CREATOR')")
+public ResponseEntity<CampaignResponse> fundCampaign(
+    @PathVariable UUID id,
+    @AuthenticationPrincipal UserPrincipal principal
+) {
+
+    return ResponseEntity.ok(
+        campaignService.fundCampaign(
+            id,
+            principal.getId()
+        )
+    );
+}
 }

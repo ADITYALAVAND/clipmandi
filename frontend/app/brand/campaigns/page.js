@@ -143,9 +143,11 @@ export default function BrandCampaignsPage() {
 // ======================================================
 
 async function handleFundCampaign(campaignId) {
+  console.log("FUND CLICKED:", campaignId);
+
   setFundingId(campaignId);
   setError("");
-
+  
   try {
     // Load Razorpay Checkout
     const loaded = await loadRazorpayScript();

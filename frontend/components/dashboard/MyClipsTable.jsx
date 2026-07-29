@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 const STATUS_CONFIG = {
   PENDING: {
@@ -17,7 +18,10 @@ const STATUS_CONFIG = {
   }
 };
 
-export default function MyClipsTable({ clips = [] }) {
+export default function MyClipsTable({
+  clips = [],
+  showViewAll = true
+}) {
   return (
     <div className="panel">
       <div className="panel-head">
@@ -35,9 +39,14 @@ export default function MyClipsTable({ clips = [] }) {
           </div>
         </div>
 
-        <span className="link-small">
-          View all →
-        </span>
+        {showViewAll && (
+            <Link
+              href="/clipper/my-clips"
+              className="link-small"
+            >
+              View all →
+            </Link>
+          )}
       </div>
 
       <div style={{ overflowX: "auto" }}>

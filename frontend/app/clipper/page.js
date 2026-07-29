@@ -22,6 +22,7 @@ export default function ClipperDashboard() {
 
   const [campaigns, setCampaigns] = useState([]);
   const [clips, setClips] = useState([]);
+  const [category, setCategory] = useState("ALL");
 
   // ======================================================
   // REAL WALLET STATE
@@ -81,7 +82,12 @@ export default function ClipperDashboard() {
         clipData,
         walletData
       ] = await Promise.all([
-        getCampaigns({ status: "LIVE" }),
+      getCampaigns({
+  status: "LIVE",
+  ...(category !== "ALL"
+    ? { category }
+    : {})
+}),
         getMyClips(),
         getWallet()
       ]);
@@ -124,7 +130,7 @@ setWallet(
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [category]);
 
   useEffect(() => {
     if (authChecked) {
@@ -200,12 +206,44 @@ setWallet(
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-ghost"
-          >
-            Filter: All niches ▾
-          </button>
+         <select
+  value={category}
+  onChange={(e) =>
+    setCategory(e.target.value)
+  }
+  className="btn btn-ghost"
+  style={{
+    cursor: "pointer"
+  }}
+>
+  <option value="ALL">
+    All niches
+  </option>
+
+  <option value="Music">
+    Music
+  </option>
+
+  <option value="Fashion">
+    Fashion
+  </option>
+
+  <option value="Fitness">
+    Fitness
+  </option>
+
+  <option value="Gaming">
+    Gaming
+  </option>
+
+  <option value="Technology">
+    Technology
+  </option>
+
+  <option value="Food">
+    Food
+  </option>
+</select>
         </div>
 
         {/* KPI CARDS */}

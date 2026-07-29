@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useState
+} from "react";
+
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { register } from "@/lib/auth";
+
+import {
+  register,
+  getCurrentUser
+} from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +25,32 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] =
+    useState(true);
+
+  // ======================================================
+  // REDIRECT ALREADY LOGGED-IN USERS
+  // ======================================================
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+
+    if (currentUser?.role === "CREATOR") {
+      router.replace("/brand");
+      return;
+    }
+
+    if (currentUser?.role === "CLIPPER") {
+      router.replace("/clipper");
+      return;
+    }
+
+    setCheckingSession(false);
+  }, [router]);
+
+  // ======================================================
+  // INPUT
+  // ======================================================
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -27,13 +61,24 @@ export default function RegisterPage() {
     }));
   }
 
+  // ======================================================
+  // REGISTER
+  // ======================================================
+
   async function handleSubmit(e) {
     e.preventDefault();
 
     setError("");
 
     if (form.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(
+        "Password must be at least 8 characters."
+      );
+      return;
+    }
+
+    if (!form.displayName.trim()) {
+      setError("Display name is required.");
       return;
     }
 
@@ -48,18 +93,54 @@ export default function RegisterPage() {
       );
 
       if (data.role === "CREATOR") {
-        router.push("/brand");
-      } else if (data.role === "CLIPPER") {
-        router.push("/clipper");
-      } else {
-        setError("Unsupported account role.");
+        router.replace("/brand");
+        return;
       }
+
+      if (data.role === "CLIPPER") {
+        router.replace("/clipper");
+        return;
+      }
+
+      setError("Unsupported account role.");
+
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(
+        err.message || "Registration failed"
+      );
     } finally {
       setLoading(false);
     }
   }
+
+  // ======================================================
+  // SESSION CHECK
+  // ======================================================
+
+  if (checkingSession) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <p
+          style={{
+            color: "var(--text-dim)"
+          }}
+        >
+          Checking session...
+        </p>
+      </main>
+    );
+  }
+
+  // ======================================================
+  // UI
+  // ======================================================
 
   return (
     <main
@@ -85,7 +166,10 @@ export default function RegisterPage() {
             marginBottom: "32px"
           }}
         >
-          <div className="logo-mark">CM</div>
+          <div className="logo-mark">
+            CM
+          </div>
+
           ClipMandi
         </Link>
 
@@ -93,7 +177,11 @@ export default function RegisterPage() {
           onSubmit={handleSubmit}
           className="panel form-panel"
         >
-          <div style={{ marginBottom: "26px" }}>
+          <div
+            style={{
+              marginBottom: "26px"
+            }}
+          >
             <div
               className="eyebrow"
               style={{
@@ -120,8 +208,8 @@ export default function RegisterPage() {
                 lineHeight: "1.6"
               }}
             >
-              Join as a creator running campaigns or a clipper
-              earning from content.
+              Join as a creator running campaigns
+              or a clipper earning from content.
             </p>
           </div>
 
@@ -134,6 +222,7 @@ export default function RegisterPage() {
               value={form.displayName}
               onChange={handleChange}
               placeholder="Your name or brand"
+              autoComplete="name"
               required
             />
           </div>
@@ -147,6 +236,7 @@ export default function RegisterPage() {
               value={form.email}
               onChange={handleChange}
               placeholder="you@example.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -160,6 +250,7 @@ export default function RegisterPage() {
               value={form.password}
               onChange={handleChange}
               placeholder="Minimum 8 characters"
+              autoComplete="new-password"
               minLength={8}
               required
             />
@@ -178,7 +269,9 @@ export default function RegisterPage() {
               <RoleButton
                 title="Clipper"
                 description="Create clips & earn"
-                selected={form.role === "CLIPPER"}
+                selected={
+                  form.role === "CLIPPER"
+                }
                 onClick={() =>
                   setForm((current) => ({
                     ...current,
@@ -190,7 +283,9 @@ export default function RegisterPage() {
               <RoleButton
                 title="Creator"
                 description="Launch campaigns"
-                selected={form.role === "CREATOR"}
+                selected={
+                  form.role === "CREATOR"
+                }
                 onClick={() =>
                   setForm((current) => ({
                     ...current,
@@ -242,6 +337,7 @@ export default function RegisterPage() {
             }}
           >
             Already have an account?{" "}
+
             <Link
               href="/login"
               style={{
@@ -268,6 +364,7 @@ function RoleButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={selected}
       style={{
         padding: "16px",
         borderRadius: "12px",
@@ -285,7 +382,8 @@ function RoleButton({
           ? "var(--text)"
           : "var(--text-dim)",
 
-        transition: "all 0.2s ease"
+        transition: "all 0.2s ease",
+        cursor: "pointer"
       }}
     >
       <div

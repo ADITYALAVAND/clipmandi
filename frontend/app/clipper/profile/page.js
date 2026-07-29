@@ -60,9 +60,10 @@ export default function ClipperProfilePage() {
   // ======================================================
 
   function handleLogout() {
-    logout();
-    router.replace("/login");
-  }
+  logout();
+  router.replace("/");
+  router.refresh();
+}
 
   // ======================================================
   // AUTH LOADING

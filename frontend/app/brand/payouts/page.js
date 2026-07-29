@@ -173,11 +173,10 @@ export default function BrandPayoutsPage() {
 
         <div className="dash-header">
           <div>
-            <h1>Payouts</h1>
+            <h1>Payments</h1>
 
             <div className="greet">
-              Track campaign budgets and
-              clipper payout spending.
+            Track campaign funding, spending and payment activity.
             </div>
           </div>
         </div>
@@ -425,34 +424,6 @@ export default function BrandPayoutsPage() {
               </table>
             </div>
 
-          </div>
-        )}
-
-        {/* PAYMENT NOTE */}
-
-        {!loading && !error && (
-          <div
-            className="panel"
-            style={{
-              padding: "20px",
-              marginTop: "20px"
-            }}
-          >
-            <h3>Payments</h3>
-
-            <div
-              style={{
-                color: "var(--text-dim)",
-                fontSize: "13px",
-                marginTop: "8px",
-                lineHeight: "1.6"
-              }}
-            >
-              Online campaign funding and
-              automated clipper payouts will be
-              available once payment integration
-              is enabled.
-            </div>
           </div>
         )}
 

@@ -173,11 +173,7 @@ export default function ClipperEarningsPage() {
       "APPROVED"
   ).length;
 
-  const pendingCount = clips.filter(
-    (clip) =>
-      clip.status?.toUpperCase() ===
-      "PENDING"
-  ).length;
+  
 
   const rejectedCount = clips.filter(
     (clip) =>
@@ -271,16 +267,17 @@ export default function ClipperEarningsPage() {
             }
             label="Approved clips"
           />
-
           <KpiCard
-            icon="⧗"
+            icon="₹"
             iconBg="var(--pink-soft)"
             value={
               loading
                 ? "—"
-                : pendingCount
+                : `₹${Number(
+                    wallet.balance || 0
+                  ).toLocaleString("en-IN")}`
             }
-            label="Pending review"
+            label="Available balance"
           />
 
         </div>

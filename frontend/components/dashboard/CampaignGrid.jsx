@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 export default function CampaignGrid({ campaigns }) {
+  const sortedCampaigns = [...campaigns].sort(
+    (a, b) =>
+      Number(b.cpm || 0) - Number(a.cpm || 0)
+  );
   return (
     <div
       className="panel"
@@ -19,7 +23,7 @@ export default function CampaignGrid({ campaigns }) {
         <h3>Open campaigns</h3>
 
         <span className="link-small">
-          Sort: Highest CPM ▾
+        Highest CPM first
         </span>
       </div>
 
@@ -36,7 +40,7 @@ export default function CampaignGrid({ campaigns }) {
           </div>
         )}
 
-        {campaigns.map((c) => {
+        {sortedCampaigns.map((c) => {
           const budgetLeft =
             Number(c.budgetTotal || 0) -
             Number(c.budgetSpent || 0);

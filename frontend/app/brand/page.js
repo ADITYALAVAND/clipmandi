@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState
+} from "react";
+
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -19,7 +24,10 @@ export default function BrandDashboard() {
   const [clips, setClips] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [authChecked, setAuthChecked] =
+    useState(false);
+
+  const [error, setError] = useState("");
 
   const [user, setUser] = useState({
     displayName: "",
@@ -44,7 +52,8 @@ export default function BrandDashboard() {
     }
 
     setUser({
-      displayName: currentUser.displayName || "Creator",
+      displayName:
+        currentUser.displayName || "Creator",
       role: currentUser.role
     });
 
@@ -52,30 +61,58 @@ export default function BrandDashboard() {
   }, [router]);
 
   // ======================================================
-  // LOAD REAL DASHBOARD DATA
+  // LOAD DASHBOARD DATA
   // ======================================================
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError("");
 
-    const [campaignData, clipData] = await Promise.all([
-      getCampaigns(),
-      getClips()
-    ]);
+    try {
+      const [
+        campaignData,
+        clipData
+      ] = await Promise.all([
+        getCampaigns(),
+        getClips()
+      ]);
 
-   setCampaigns(
-  campaignData?.__error
-    ? []
-    : campaignData || []
-);
+      if (
+        campaignData?.__error ||
+        clipData?.__error
+      ) {
+        setError(
+          campaignData?.message ||
+            clipData?.message ||
+            "Dashboard data could not be loaded."
+        );
+      }
 
-setClips(
-  clipData?.__error
-    ? []
-    : clipData || []
-);
+      setCampaigns(
+        campaignData?.__error
+          ? []
+          : campaignData || []
+      );
 
-    setLoading(false);
+      setClips(
+        clipData?.__error
+          ? []
+          : clipData || []
+      );
+
+    } catch (err) {
+      console.error(
+        "Failed to load creator dashboard:",
+        err
+      );
+
+      setError(
+        "Dashboard data could not be loaded."
+      );
+
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -98,7 +135,11 @@ setClips(
           justifyContent: "center"
         }}
       >
-        <p style={{ color: "var(--text-dim)" }}>
+        <p
+          style={{
+            color: "var(--text-dim)"
+          }}
+        >
           Checking session...
         </p>
       </main>
@@ -106,12 +147,13 @@ setClips(
   }
 
   // ======================================================
-  // REAL CREATOR STATISTICS
+  // CREATOR STATISTICS
   // ======================================================
 
   const totalSpent = campaigns.reduce(
     (sum, campaign) =>
-      sum + Number(campaign.budgetSpent || 0),
+      sum +
+      Number(campaign.budgetSpent || 0),
     0
   );
 
@@ -125,32 +167,41 @@ setClips(
 
   const pendingClips = clips.filter(
     (clip) =>
-      clip.status?.toUpperCase() === "PENDING"
-  ).length;
+      clip.status?.toUpperCase() ===
+      "PENDING"
+  );
 
   // ======================================================
-  // ADD REAL CLIP STATS TO EACH CAMPAIGN
+  // CAMPAIGN STATISTICS
   // ======================================================
 
-  const campaignsWithStats = campaigns.map((campaign) => {
-    const campaignClips = clips.filter(
-      (clip) => clip.campaignId === campaign.id
-    );
+  const campaignsWithStats =
+    campaigns.map((campaign) => {
+      const campaignClips = clips.filter(
+        (clip) =>
+          clip.campaignId === campaign.id
+      );
 
-    const campaignViews = campaignClips.reduce(
-      (sum, clip) =>
-        sum + Number(clip.views || 0),
-      0
-    );
+      const campaignViews =
+        campaignClips.reduce(
+          (sum, clip) =>
+            sum + Number(clip.views || 0),
+          0
+        );
 
-    return {
-      ...campaign,
+      return {
+        ...campaign,
+        views: campaignViews,
+        clipsCount: campaignClips.length
+      };
+    });
 
-      views: campaignViews,
+  // Overview only needs previews.
+  const recentCampaigns =
+    campaignsWithStats.slice(0, 3);
 
-      clipsCount: campaignClips.length
-    };
-  });
+  const recentClips =
+    clips.slice(0, 5);
 
   // ======================================================
   // DASHBOARD
@@ -176,7 +227,7 @@ setClips(
 
             <div className="greet">
               {loading
-                ? "Loading campaigns…"
+                ? "Loading your dashboard..."
                 : `Welcome back, ${user.displayName} — here's how your campaigns are performing.`}
             </div>
           </div>
@@ -190,6 +241,26 @@ setClips(
 
         </div>
 
+        {/* ERROR */}
+
+        {error && (
+          <div
+            className="panel"
+            style={{
+              padding: "16px 18px",
+              marginBottom: "20px"
+            }}
+          >
+            <span
+              style={{
+                color: "var(--text-dim)"
+              }}
+            >
+              {error}
+            </span>
+          </div>
+        )}
+
         {/* KPI CARDS */}
 
         <div className="cards-row">
@@ -197,47 +268,211 @@ setClips(
           <KpiCard
             icon="₹"
             iconBg="var(--violet-soft)"
-            value={`₹${totalSpent.toLocaleString(
-              "en-IN"
-            )}`}
+            value={
+              loading
+                ? "—"
+                : `₹${totalSpent.toLocaleString(
+                    "en-IN"
+                  )}`
+            }
             label="Total campaign spend"
           />
 
           <KpiCard
             icon="▶"
             iconBg="var(--violet-soft)"
-            value={formatViews(totalViews)}
+            value={
+              loading
+                ? "—"
+                : formatViews(totalViews)
+            }
             label="Verified views"
           />
 
           <KpiCard
             icon="✎"
             iconBg="var(--pink-soft)"
-            value={totalClips}
+            value={
+              loading
+                ? "—"
+                : totalClips
+            }
             label="Clips submitted"
           />
 
           <KpiCard
-            icon="⧗"
+            icon="⌛"
             iconBg="var(--lime-soft)"
-            value={pendingClips}
+            value={
+              loading
+                ? "—"
+                : pendingClips.length
+            }
             label="Pending review"
           />
 
         </div>
 
-        {/* CAMPAIGNS */}
+        {/* NEEDS ATTENTION */}
 
-        <CampaignsTable
-          campaigns={campaignsWithStats}
-        />
+        {!loading &&
+          pendingClips.length > 0 && (
+            <div
+              className="panel"
+              style={{
+                padding: "20px 24px",
+                marginBottom: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent:
+                  "space-between",
+                gap: "20px"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: "650",
+                    marginBottom: "5px"
+                  }}
+                >
+                  {pendingClips.length === 1
+                    ? "1 clip is waiting for your review"
+                    : `${pendingClips.length} clips are waiting for your review`}
+                </div>
 
-        {/* CLIP REVIEW INBOX */}
+                <div
+                  style={{
+                    color:
+                      "var(--text-dim)",
+                    fontSize: "13px"
+                  }}
+                >
+                  Review new submissions and
+                  approve or reject them.
+                </div>
+              </div>
 
-        <ClipInboxTable
-          clips={clips}
-          onUpdated={loadData}
-        />
+              <Link
+                href="/brand/clips"
+                className="btn btn-primary"
+                style={{
+                  whiteSpace: "nowrap"
+                }}
+              >
+                Review clips →
+              </Link>
+            </div>
+          )}
+
+        {/* CAMPAIGN PREVIEW */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center",
+            marginBottom: "12px"
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                fontSize: "18px",
+                margin: 0
+              }}
+            >
+              Campaign performance
+            </h2>
+          </div>
+
+          <Link
+            href="/brand/campaigns"
+            className="link-small"
+          >
+            View all campaigns →
+          </Link>
+        </div>
+
+        {!loading &&
+          recentCampaigns.length > 0 && (
+            <CampaignsTable
+              campaigns={recentCampaigns}
+            />
+          )}
+
+        {!loading &&
+          campaigns.length === 0 && (
+            <div
+              className="panel"
+              style={{
+                padding: "32px",
+                textAlign: "center"
+              }}
+            >
+              <h3>
+                No campaigns yet
+              </h3>
+
+              <p
+                style={{
+                  color:
+                    "var(--text-dim)",
+                  marginBottom: "18px"
+                }}
+              >
+                Create your first campaign
+                to start receiving clips.
+              </p>
+
+              <Link
+                href="/brand/campaigns/new"
+                className="btn btn-primary"
+              >
+                + Create campaign
+              </Link>
+            </div>
+          )}
+
+        {/* RECENT SUBMISSIONS */}
+
+        {!loading &&
+          recentClips.length > 0 && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  alignItems: "center",
+                  marginTop: "28px",
+                  marginBottom: "12px"
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "18px",
+                    margin: 0
+                  }}
+                >
+                  Recent submissions
+                </h2>
+
+                <Link
+                  href="/brand/clips"
+                  className="link-small"
+                >
+                  View clip inbox →
+                </Link>
+              </div>
+
+              <ClipInboxTable
+                clips={recentClips}
+                onUpdated={loadData}
+              />
+            </>
+          )}
 
       </main>
 
@@ -254,11 +489,15 @@ function formatViews(n) {
   const views = Number(n || 0);
 
   if (views >= 1000000) {
-    return `${(views / 1000000).toFixed(1)}M`;
+    return `${(
+      views / 1000000
+    ).toFixed(1)}M`;
   }
 
   if (views >= 1000) {
-    return `${(views / 1000).toFixed(0)}K`;
+    return `${(
+      views / 1000
+    ).toFixed(0)}K`;
   }
 
   return String(views);

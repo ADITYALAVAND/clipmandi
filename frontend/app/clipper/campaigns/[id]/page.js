@@ -431,21 +431,36 @@ if (!data) {
               )}
 
               {submitSuccess && (
-                <div className={styles.submitSuccess}>
-                  ✓ {submitSuccess}
-                </div>
-              )}
+            <div className={styles.submitSuccess}>
+              <div>
+                ✓ {submitSuccess}
+              </div>
+
+              <Link
+                href="/clipper/my-clips"
+                className="link-small"
+                style={{
+                  display: "inline-block",
+                  marginTop: "10px"
+                }}
+              >
+                View My Clips →
+              </Link>
+            </div>
+          )}
 
               <div className={styles.formActions}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={submitting}
-                >
-                  {submitting
-                    ? "Submitting..."
-                    : "Submit for review"}
-                </button>
+                {!submitSuccess && (
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting
+                      ? "Submitting..."
+                      : "Submit for review"}
+                  </button>
+                )}
 
                 <button
                   type="button"

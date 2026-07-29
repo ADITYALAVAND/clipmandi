@@ -21,7 +21,7 @@ const BRAND_LINKS = [
     href: "/brand/clips"
   },
   {
-    label: "Payouts",
+    label: "Payments",
     icon: "₹",
     href: "/brand/payouts"
   },
@@ -73,10 +73,11 @@ export default function Sidebar({
       ? BRAND_LINKS
       : CLIPPER_LINKS;
 
-  function handleLogout() {
-    logout();
-    router.replace("/login");
-  }
+ function handleLogout() {
+  logout();
+  router.replace("/");
+  router.refresh();
+}
 
   function isActive(href) {
     // Dashboard routes must match exactly.
@@ -94,7 +95,10 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
 
-      <Link className="logo" href="/">
+      <Link
+  className="logo"
+  href={role === "brand" ? "/brand" : "/clipper"}
+>
         <div className="logo-mark">
           CM
         </div>

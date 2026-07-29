@@ -242,7 +242,10 @@ export default function ClipperMyClipsPage() {
               marginTop: "8px"
             }}
           >
-            <MyClipsTable clips={clips} />
+            <MyClipsTable
+                clips={clips}
+                showViewAll={false}
+              />
           </div>
         )}
 

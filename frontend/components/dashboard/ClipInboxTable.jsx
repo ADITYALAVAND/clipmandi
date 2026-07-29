@@ -49,28 +49,36 @@ export default function ClipInboxTable({
   // ======================================================
 
   async function handleReject(id) {
-    setError("");
-    setSuccess("");
-    setProcessingId(id);
-
-    const result = await rejectClip(id);
-
-   if (result?.__error || !result) {
-  setError(
-    result?.message ||
-      "Could not reject this clip."
+  const confirmed = window.confirm(
+    "Reject this clip? This action will mark the submission as rejected."
   );
-  setProcessingId(null);
-  return;
-}
 
-    setSuccess("Clip rejected.");
-
-    await onUpdated?.();
-
-    setProcessingId(null);
+  if (!confirmed) {
+    return;
   }
 
+  setError("");
+  setSuccess("");
+  setProcessingId(id);
+
+  const result = await rejectClip(id);
+
+  if (result?.__error || !result) {
+    setError(
+      result?.message ||
+        "Could not reject this clip."
+    );
+
+    setProcessingId(null);
+    return;
+  }
+
+  setSuccess("Clip rejected successfully.");
+
+  await onUpdated?.();
+
+  setProcessingId(null);
+}
   // ======================================================
   // YOUTUBE MANUAL SYNC FALLBACK
   // ======================================================

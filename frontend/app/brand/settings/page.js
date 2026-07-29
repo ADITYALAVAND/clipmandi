@@ -58,9 +58,10 @@ export default function BrandSettingsPage() {
   // ======================================================
 
   function handleLogout() {
-    logout();
-    router.replace("/login");
-  }
+  logout();
+  router.replace("/");
+  router.refresh();
+}
 
   // ======================================================
   // AUTH LOADING
@@ -200,33 +201,7 @@ export default function BrandSettingsPage() {
             />
           </div>
 
-          {/* FUTURE SETTINGS */}
-
-          <div
-            style={{
-              marginTop: "28px",
-              paddingTop: "24px",
-              borderTop:
-                "1px solid var(--border-soft)"
-            }}
-          >
-            <h3>
-              Payment settings
-            </h3>
-
-            <div
-              style={{
-                color: "var(--text-dim)",
-                fontSize: "13px",
-                lineHeight: "1.6",
-                marginTop: "8px"
-              }}
-            >
-              Billing and payment methods will
-              become available when online
-              campaign funding is enabled.
-            </div>
-          </div>
+          
 
           {/* LOGOUT */}
 

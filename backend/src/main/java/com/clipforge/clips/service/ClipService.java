@@ -270,10 +270,37 @@ public class ClipService {
             );
         }
 
-        Clip clip = getClipForCreator(
-            clipId,
-            creatorId
+        Clip clip =
+    clipRepository
+        .findByIdForUpdate(clipId)
+        .orElseThrow(
+            () -> new NotFoundException(
+                "Clip not found"
+            )
         );
+
+// Verify that this clip belongs to a campaign
+// owned by the logged-in creator.
+Campaign ownershipCampaign =
+    campaignRepository
+        .findByIdAndDeletedAtIsNull(
+            clip.getCampaignId()
+        )
+        .orElseThrow(
+            () -> new NotFoundException(
+                "Campaign not found"
+            )
+        );
+
+if (
+    !ownershipCampaign
+        .getCreatorId()
+        .equals(creatorId)
+) {
+    throw new ForbiddenException(
+        "You don't have access to this clip"
+    );
+}
 
         // Only approved clips can earn money.
         if (clip.getStatus() != ClipStatus.APPROVED) {

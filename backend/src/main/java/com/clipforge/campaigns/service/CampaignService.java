@@ -280,15 +280,17 @@ public CampaignResponse fundCampaign(
     UUID creatorId
 ) {
 
-    Campaign campaign =
-        campaignRepository
-            .findByIdAndDeletedAtIsNull(campaignId)
-            .orElseThrow(
-                () -> new NotFoundException(
-                    "Campaign not found"
-                )
-            );
-
+   Campaign campaign =
+    campaignRepository
+        .findByIdForUpdate(
+            campaignId
+        )
+        .orElseThrow(
+            () -> new NotFoundException(
+                "Campaign not found"
+            )
+        );
+        
     // Only the owner can fund this campaign.
     if (!campaign.getCreatorId().equals(creatorId)) {
         throw new ForbiddenException(

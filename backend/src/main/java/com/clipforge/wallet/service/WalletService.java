@@ -62,7 +62,7 @@ public class WalletService {
             return;
         }
 
-        Wallet wallet = getOrCreateWallet(clipperId);
+        Wallet wallet = getWalletForUpdate(clipperId);
 
         wallet.setBalancePaise(
             wallet.getBalancePaise() + amountPaise
@@ -128,7 +128,7 @@ public WalletResponse withdraw(
         );
     }
 
-    Wallet wallet = getOrCreateWallet(userId);
+    Wallet wallet = getWalletForUpdate(userId);
 
     if (wallet.getBalancePaise() < amountPaise) {
         throw new BadRequestException(
@@ -198,4 +198,28 @@ public WalletResponse withdraw(
                 return walletRepository.save(wallet);
             });
     }
+    private Wallet getWalletForUpdate(UUID userId) {
+
+    /*
+     * First make sure the wallet exists.
+     *
+     * Wallet.userId has a UNIQUE constraint, so each user
+     * can have only one wallet.
+     */
+    getOrCreateWallet(userId);
+
+    /*
+     * Re-read the wallet using PESSIMISTIC_WRITE.
+     *
+     * Any other transaction trying to modify this user's
+     * wallet must wait until our transaction completes.
+     */
+    return walletRepository
+        .findByUserIdForUpdate(userId)
+        .orElseThrow(
+            () -> new IllegalStateException(
+                "Wallet could not be loaded"
+            )
+        );
+}
 }
